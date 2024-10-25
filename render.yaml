@@ -2,7 +2,7 @@ databases:
 - name: temporal-db
   databaseName: temporal
   user: temporal
-  plan: Starter
+  plan: free
   region: oregon
 
 envVarGroups:
