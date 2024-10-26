@@ -50,17 +50,6 @@ services:
   runtime: docker
   image:
     url: docker.io/temporalio/admin-tools:1.25.1-tctl-1.18.1-cli-1.1.0
-  envVars:
-  - key: TEMPORAL_ADDRESS
-    fromService:
-      name: temporal
-      type: pserv
-      property: host
-  - key: TEMPORAL_CLI_ADDRESS
-    fromService:
-      name: temporal
-      type: pserv
-      property: host
 - name: temporal-ui
   type: pserv
   autoDeploy: false
@@ -72,13 +61,6 @@ services:
   envVars:
   - key: PORT
     value: 8088
-  - key: TEMPORAL_ADDRESS
-    fromService:
-      name: temporal
-      type: pserv
-      property: host
-  - key: TEMPORAL_CORS_ORIGINS
-    value: http://localhost:3000
 - type: web
   repo: https://github.com/render-examples/sample-temporal-app
   name: app-workflow-trigger
