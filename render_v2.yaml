@@ -1,27 +1,33 @@
 databases:
 - name: temporal-db
   databaseName: temporal
-  postgresMajorVersion: "13"
   user: temporal
   plan: free
   region: oregon
 
 services:
-- name: temporal
-  type: pserv
+- type: pserv
+  name: temporal
   autoDeploy: false
-  plan: starter
+  plan: Starter
   region: oregon
-  runtime: docker
-  image:
-    url: docker.io/temporalio/auto-setup:1.25.1
+  env: docker
+  dockerfilePath: ./server/Dockerfile
   envVars:
-  - key: PORT
-    value: 7233
+  - key: SERVICES
+    value: frontend,matching,history,worker
   - key: DYNAMIC_CONFIG_FILE_PATH
     value: /etc/temporal/dynamicconfig.yaml
+  - key: BIND_ON_IP
+    value: 0.0.0.0
+  - key: TEMPORAL_BROADCAST_ADDRESS
+    value: 0.0.0.0
+  - key: TEMPORAL_CLI_ADDRESS
+    value: localhost:7233
+  - key: SKIP_POSTGRES_DB_CREATION
+    value: true
   - key: DB
-    value: postgres12
+    value: postgresql
   - key: DBNAME
     fromDatabase:
       name: temporal-db
@@ -42,49 +48,49 @@ services:
     fromDatabase:
       name: temporal-db
       property: host
-- name: temporal-admin-tools
-  type: pserv
-  autoDeploy: false
-  plan: starter
-  region: oregon
-  runtime: docker
-  image:
-    url: docker.io/temporalio/admin-tools:1.25.1-tctl-1.18.1-cli-1.1.0
-  envVars:
-  - key: TEMPORAL_ADDRESS
-    fromService:
-      name: temporal
-      type: pserv
+  - key: VISIBILITY_DBNAME
+    fromDatabase:
+      name: temporal-db-visibility
+      property: database
+  - key: VISIBILITY_DB_PORT
+    fromDatabase:
+      name: temporal-db-visibility
+      property: port
+  - key: VISIBILITY_POSTGRES_USER
+    fromDatabase:
+      name: temporal-db-visibility
+      property: user
+  - key: VISIBILITY_POSTGRES_PWD
+    fromDatabase:
+      name: temporal-db-visibility
+      property: password
+  - key: VISIBILITY_POSTGRES_SEEDS
+    fromDatabase:
+      name: temporal-db-visibility
       property: host
-  - key: TEMPORAL_CLI_ADDRESS
-    fromService:
-      name: temporal
-      type: pserv
-      property: host
-- name: temporal-ui
-  type: pserv
+- type: web
+  name: temporal-ui
   autoDeploy: false
-  plan: starter
+  plan: Starter
   region: oregon
-  runtime: docker
-  image:
-    url: docker.io/temporalio/ui:2.26.2
+  env: docker
+  dockerfilePath: ./web/Dockerfile
   envVars:
   - key: PORT
     value: 8088
-  - key: TEMPORAL_ADDRESS
+  - key: TEMPORAL_PERMIT_WRITE_API
+    value: true
+  - key: TEMPORAL_GRPC_HOST
     fromService:
       name: temporal
       type: pserv
       property: host
-  - key: TEMPORAL_CORS_ORIGINS
-    value: http://localhost:3000
 - type: web
   repo: https://github.com/render-examples/sample-temporal-app
   name: app-workflow-trigger
-  plan: starter
+  plan: Starter
   region: oregon
-  runtime: go
+  env: go
   buildCommand: go build start/main.go
   startCommand: ./main
   envVars:
@@ -96,9 +102,9 @@ services:
 - type: worker
   repo: https://github.com/render-examples/sample-temporal-app
   name: app-worker
-  plan: starter
+  plan: Starter
   region: oregon
-  runtime: go
+  env: go
   buildCommand: go build worker/main.go
   startCommand: ./main
   envVars:
